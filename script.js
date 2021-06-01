@@ -13,6 +13,7 @@ class Workout {
   date = new Date();
   id = Date.now() + ''; // In real world with some users, we need to use another strategy to manage ID.
   type;
+  clicks = 0;
 
   constructor(coords, distance, duration, type) {
     this.coords = coords; // [lat, lng]
@@ -65,6 +66,7 @@ class Cycling extends Workout {
 // APPLICATION ARCHITECTURE
 class App {
   #map;
+  #mapZoomLevel = 13;
   #mapEvent;
   #workouts = [];
 
@@ -73,6 +75,7 @@ class App {
 
     form.addEventListener('submit', this._newWorkout.bind(this));
     inputType.addEventListener('change', this._toggleElevationField);
+    containerWorkouts.addEventListener('click', this._moveToPopup.bind(this));
   }
 
   _getPosition() {
@@ -86,7 +89,7 @@ class App {
   _loadMap(position) {
     const coords = [position.coords.latitude, position.coords.longitude];
 
-    this.#map = L.map('map').setView(coords, 13);
+    this.#map = L.map('map').setView(coords, this.#mapZoomLevel);
 
     L.tileLayer('https://{s}.tile.openstreetmap.fr/hot/{z}/{x}/{y}.png').addTo(
       this.#map
@@ -196,7 +199,9 @@ class App {
         <div class="workout__details">
           <span class="workout__icon">⚡️</span>
           <span class="workout__value">${
-            workout.type === 'running' ? workout.pace : workout.speed
+            workout.type === 'running'
+              ? Math.round(workout.pace)
+              : Math.round(workout.speed)
           }</span>
           <span class="workout__unit">${
             workout.type === 'running' ? 'min/km' : 'km/h'
@@ -233,6 +238,23 @@ class App {
         `${workout.type === 'running' ? '🏃‍♂️' : '🚴‍♀️'}${workout.description}`
       )
       .openPopup();
+  }
+
+  _moveToPopup(e) {
+    const workoutEl = e.target.closest('.workout');
+
+    if (!workoutEl) return; // Verify that the user click on a valid element in the DOM
+
+    const workout = this.#workouts.find(
+      workout => workout.id === workoutEl.dataset.id
+    );
+
+    this.#map.setView(workout.coords, this.#mapZoomLevel, {
+      animate: true,
+      pan: {
+        duration: 1,
+      },
+    });
   }
 }
 
