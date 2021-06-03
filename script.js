@@ -282,6 +282,11 @@ class App {
 
     this.#workouts = data;
   }
+
+  reset() {
+    localStorage.removeItem('workouts');
+    location.reload();
+  }
 }
 
 const app = new App();
